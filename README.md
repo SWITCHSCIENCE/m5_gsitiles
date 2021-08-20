@@ -1,2 +1,2 @@
-# m5_osaka_ortho
-Displaying orthoimages of Osaka City on M5Stack Core2
+# m5_gsitiles
+Show GSI tiles on M5Stack Core2
