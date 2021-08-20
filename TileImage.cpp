@@ -170,6 +170,17 @@ void ImageSource::printTiledRects(Point points[], Rect rects[], int count)
     }
 }
 
+XYZImageSource::XYZImageSource(uint8_t min_lvl, uint8_t max_lvl, uint16_t tile_sz, const char *img_dir, const char *img_fmt)
+    : ImageSource(min_lvl, max_lvl, tile_sz, tile_sz * (1 << max_lvl), tile_sz * (1 << max_lvl), img_dir, img_fmt)
+{
+    numLevels = max_lvl + 1;
+}
+
+size_t XYZImageSource::getImageUrl(char *str, size_t nstr, uint8_t l, int c, int r)
+{
+    return snprintf(str, nstr, "%s/%d/%d/%d.%s", imagesUrl, l, c, r, imagesFmt);
+}
+
 void Viewport::showCenter(void)
 {
     moveTo(0.5, 0.5);
@@ -257,6 +268,18 @@ Rect *RectCache::acquireCache(uint32_t key)
     return &values[k];
 }
 
+void RectCache::removeCache(uint32_t key)
+{
+    for (int i = 0; i < numCaches; i++)
+    {
+        if (keys[i] == key)
+        {
+            keys[i] = InvalidKey;
+            break;
+        }
+    }
+}
+
 Viewer::Viewer(ImageSource &imgsrc, int numCaches)
     : imageSource(imgsrc), viewport(imgsrc.minLevel, imgsrc.maxLevel), tileCache(numCaches)
 {
@@ -271,8 +294,9 @@ void Viewer::setFrame(Rect f)
     frame = f;
 }
 
-void Viewer::loadImageToCache(Rect dst, uint8_t level, int column, int row)
+bool Viewer::loadImageToCache(Rect dst, uint8_t level, int column, int row)
 {
+    return false;
 }
 
 void Viewer::draw(bool loadDisable)
@@ -307,7 +331,11 @@ void Viewer::draw(bool loadDisable)
                 // Serial.printf("%d %d %d = no cache\n", lvl, col, row);
                 cache = tileCache.acquireCache(key);
                 // Serial.printf("%d %d %d = (%d %d)\n", lvl, col, row, cache->x, cache->y);
-                loadImageToCache(*cache, lvl, col, row);
+                if (!loadImageToCache(*cache, lvl, col, row))
+                {
+                    tileCache.removeCache(key);
+                    cache = NULL;
+                }
             }
         }
         if (cache == NULL)
