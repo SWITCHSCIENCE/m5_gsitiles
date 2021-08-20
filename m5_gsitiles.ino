@@ -39,6 +39,10 @@ M5GFX display;
 TileImage::XYZImageSource gsiStdMapImage(1, 18, 256, "https://cyberjapandata.gsi.go.jp/xyz/std", "png");
 M5TileImageViewer viewer(display, gsiStdMapImage, 25, ca);
 
+double default_x = 0;
+double default_y = 0;
+int default_z = 1;
+
 void setup()
 {
     M5.begin();
@@ -68,13 +72,14 @@ void setup()
         display.setRotation(display.getRotation() ^ 1);
     }
 
+    latLonToTile(&default_x, &default_y, 35.689440, 139.691670, 0); // 東京都庁
+    default_z = 7;
+
     viewer.willLoadImageCallback = printLoading;
     viewer.setFrame({0, 0, display.width(), display.height() - 8});
     viewer.prepareCache();
-    viewer.viewport.setLevel(4);
-    viewer.viewport.moveTo(0.8798828125, 0.3837890625);
-    // viewer.viewport.setLevel(viewer.imageSource.minLevel);
-    // viewer.viewport.showCenter();
+    viewer.viewport.setLevel(default_z);
+    viewer.viewport.moveTo(default_x, default_y);
     viewer.draw();
 
     printTouchLabel();
@@ -110,10 +115,8 @@ void loop()
 
     if (M5.BtnB.wasReleased())
     {
-        viewer.viewport.setLevel(4);
-        viewer.viewport.moveTo(0.8798828125, 0.3837890625);
-        // viewer.viewport.setLevel(viewer.imageSource.minLevel);
-        // viewer.viewport.showCenter();
+        viewer.viewport.setLevel(default_z);
+        viewer.viewport.moveTo(default_x, default_y);
         redraw = true;
     }
 
@@ -175,4 +178,23 @@ void printLoading(const char *path, uint8_t level, int col, int row)
 {
     display.setCursor(0, display.height() - 8 + 1);
     display.printf("%-35s   ", path);
+}
+
+// 参考記事
+// https://www.trail-note.net/tech/coordinate/
+// https://note.sngklab.jp/?p=72
+
+void tileToLatLon(double *lat /*緯度*/, double *lon /*経度*/, double x, double y, int z)
+{
+    double zz = pow(2.0, z);
+    *lon = (x / zz) * 360.0 - 180.0;
+    double mapy = (y / zz) * 2.0 * M_PI - M_PI;
+    *lat = 2.0 * atan(pow(M_E, -mapy)) * 180.0 / M_PI - 90.0;
+}
+
+void latLonToTile(double *x, double *y, double lat, double lon, int z)
+{
+    double zz = pow(2.0, z);
+    *x = ((lon / 180.0 + 1) * zz / 2.0);
+    *y = (((-log(tan((45.0 + lat / 2.0) * M_PI / 180.0)) + M_PI) * zz / (2.0 * M_PI)));
 }
