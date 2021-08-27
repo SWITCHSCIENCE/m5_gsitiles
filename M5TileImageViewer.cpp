@@ -54,6 +54,12 @@ static bool httpget(const char *url, const char *ca, const char *save_to)
 {
     bool result = true;
 
+    if (!WiFi.isConnected())
+    {
+        DBG_PRINT("[HTTP] WiFi is not connected.\n");
+        return false;
+    }
+
     DBG_PRINT("[HTTP] begin...\n");
     http.setReuse(true);
     http.begin(url, ca);
@@ -147,7 +153,14 @@ bool M5TileImageViewer::loadImageToCache(TileImage::Rect dst, uint8_t level, int
             willLoadImageCallback(filepath, level, column, row);
         }
         spriteCache.fillRect(dst.x, dst.y, dst.w, dst.h, 0);
-        spriteCache.drawPngFile(SD, filepath, dst.x, dst.y, dst.w, dst.h, 0, 0);
+        if (strncmp(imageSource.imagesFmt, "png", 3) == 0)
+        {
+            spriteCache.drawPngFile(SD, filepath, dst.x, dst.y, dst.w, dst.h, 0, 0);
+        }
+        else if (strncmp(imageSource.imagesFmt, "jpg", 3) == 0)
+        {
+            spriteCache.drawJpgFile(SD, filepath, dst.x, dst.y, dst.w, dst.h, 0, 0);
+        }
         result = true;
     }
     return result;

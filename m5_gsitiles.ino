@@ -36,8 +36,10 @@ const char *ca =
 // https://maps.gsi.go.jp/development/siyou.html
 
 M5GFX display;
-TileImage::XYZImageSource gsiStdMapImage(1, 18, 256, "https://cyberjapandata.gsi.go.jp/xyz/std", "png");
-M5TileImageViewer viewer(display, gsiStdMapImage, 25, ca);
+TileImage::XYZImageSource gsiImage(1, 18, 256, "https://cyberjapandata.gsi.go.jp/xyz/std", "png");
+// TileImage::XYZImageSource gsiImage(2, 18, 256, "https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto", "jpg");
+
+M5TileImageViewer viewer(display, gsiImage, 25, ca);
 
 double default_x = 0;
 double default_y = 0;
@@ -58,13 +60,16 @@ void setup()
         delay(1000);
     }
 
-    Serial.println("\nTime sync...");
+    Serial.println("\nGSI Map Viewer for M5Stack Core2");
 
-    configTzTime("JST-9", "ntp.nict.jp");
-    struct tm timeinfo;
-    getLocalTime(&timeinfo, 60000);
+    if (WiFi.isConnected())
+    {
+        Serial.println("Time sync...");
 
-    Serial.println("GSI Standard Map Viewer for M5Stack Core2");
+        configTzTime("JST-9", "ntp.nict.jp");
+        struct tm timeinfo;
+        getLocalTime(&timeinfo, 60000);
+    }
 
     display.begin();
     if (display.width() < display.height())
